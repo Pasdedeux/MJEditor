@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.421
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EditorDll", "EditorDll\EditorDll.csproj", "{96EF03AC-AE8A-4997-80B5-6135F4ECDF14}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{96EF03AC-AE8A-4997-80B5-6135F4ECDF14}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{96EF03AC-AE8A-4997-80B5-6135F4ECDF14}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{96EF03AC-AE8A-4997-80B5-6135F4ECDF14}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{96EF03AC-AE8A-4997-80B5-6135F4ECDF14}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {0F9BE77C-2CC8-4220-98FC-F90B3DEA3B8A}
+	EndGlobalSection
+EndGlobal
