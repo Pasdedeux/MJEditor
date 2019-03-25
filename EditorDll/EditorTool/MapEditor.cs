@@ -287,6 +287,30 @@ public class MapEditor : EditorWindow
             if ( _scene == null ) _scene = GameObject.Find( "Scene" );
             if ( _scene != null ) _scene.transform.position = GridOffset;
 
+
+            using ( new BackgroundColorScope( Color.white ) )
+            {
+                if ( GUILayout.Button( "复制最上层展示中矩阵" ) )
+                {
+                    LayerList.Add( true );
+                    CreateLayer( LayerList.Count - 1 );
+
+                    int topShowLayerIndex = -1;
+                    //获取最上层展示层
+                    for ( int i = LayerList.Count-2; i >-1; i-- )
+                    {
+                        if ( LayerList[ i ] )
+                        {
+                            topShowLayerIndex = i;
+                            break;
+                        }
+                    }
+                    if ( topShowLayerIndex == -1 ) return;
+
+                    DuplicateLayer( topShowLayerIndex, LayerList.Count - 1 );
+                }
+            }
+
             using ( new EditorGUILayout.HorizontalScope() )
             {
                 //设置按钮颜色
@@ -343,6 +367,15 @@ public class MapEditor : EditorWindow
         }
     }
 
+    private void DuplicateLayer( int topShowLayerIndex , int toLayerIndex )
+    {
+        var list = _currentLevelCoreIndex[ topShowLayerIndex ];
+        for ( int i = 0; i < list.Count; i++ )
+        {
+            RealAddCard( toLayerIndex, list[ i ] );
+        }
+    }
+
     private void EditorUpdateLabel()
     {
         
@@ -383,11 +416,11 @@ public class MapEditor : EditorWindow
     /// </summary>
     private void SaveFile()
     {
-        if ( CurrentUsedCardNum>140 )
-        {
-            EditorUtility.DisplayDialog( "提醒", string.Format( "已超过麻将数上限：140，当前使用 {0}", CurrentUsedCardNum ), "确定" );
-            return;
-        }
+        //if ( CurrentUsedCardNum>140 )
+        //{
+        //    EditorUtility.DisplayDialog( "提醒", string.Format( "已超过麻将数上限：140，当前使用 {0}", CurrentUsedCardNum ), "确定" );
+        //    return;
+        //}
         var filepath = AssetPathManager.Instance.GetStreamAssetDataPath( string.Format( "level_{0}.dat", CurrentLevelID ) );
 
         FileInfo fileInfo = new FileInfo(filepath);
@@ -578,6 +611,14 @@ public class MapEditor : EditorWindow
         //汇总数据
         if ( _currentLevelCoreIndex.ContainsKey( layerIndex ) )
         {
+            var currentLayer = _currentLevelCoreIndex[ layerIndex ];
+            for ( int i = 0; i < currentLayer.Count; i++ )
+            {
+                var row = Mathf.FloorToInt( ( float )currentLayer[i] / ColNum );
+                var col = currentLayer[ i ] % ColNum;
+                //RealRemoveCard( layerIndex, currentLayer[ i ], row, col );
+            }
+
             _currentLevelCoreIndex[ layerIndex ].Clear();
             _currentLevelCoreIndex.Remove( layerIndex );
         }
