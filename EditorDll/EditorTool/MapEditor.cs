@@ -51,9 +51,9 @@ public class MapEditor : EditorWindow
                     int row = int.Parse( nameList[ 1 ] );
                     int col = int.Parse( nameList[ 2 ] );
                     int index = int.Parse( nameList[ 3 ] );
-                    
+
                     //非边界点
-                    if( row>0 && row <RowNum-1 && col >0 && col <ColNum-1 )
+                    if ( row > 0 && row < RowNum - 1 && col > 0 && col < ColNum - 1 )
                         RealAddCard( layer, index );
                 }
                 UnityEngine.Debug.Log( "Left-Mouse Down" );
@@ -81,7 +81,7 @@ public class MapEditor : EditorWindow
     }
 
 
-    private void RealAddCard(int layer,int index)
+    private void RealAddCard( int layer, int index )
     {
         //9点是否可用
         int[] targetIndexs = new int[ 9 ];
@@ -110,7 +110,7 @@ public class MapEditor : EditorWindow
         //    }
         //}
 
-        if ( _allIndexLayers[layer][index]<1 )
+        if ( _allIndexLayers[ layer ][ index ] < 1 )
         {
             for ( int i = 0; i < targetIndexs.Length; i++ )
             {
@@ -129,7 +129,7 @@ public class MapEditor : EditorWindow
     }
 
 
-    private void RealRemoveCard(int layer, int index, int row, int col)
+    private void RealRemoveCard( int layer, int index, int row, int col )
     {
         //9点是否可用
         int[] targetIndexs = new int[ 9 ];
@@ -297,7 +297,7 @@ public class MapEditor : EditorWindow
 
                     int topShowLayerIndex = -1;
                     //获取最上层展示层
-                    for ( int i = LayerList.Count-2; i >-1; i-- )
+                    for ( int i = LayerList.Count - 2; i > -1; i-- )
                     {
                         if ( LayerList[ i ] )
                         {
@@ -320,6 +320,27 @@ public class MapEditor : EditorWindow
                     {
                         LayerList.Add( true );
                         CreateLayer( LayerList.Count - 1 );
+                    }
+                }
+
+                using ( new BackgroundColorScope( Color.yellow ) )
+                {
+                    if ( GUILayout.Button( "移除显示中的最上层矩阵" ) )
+                    {
+                        if ( LayerList.Count > 0 )
+                        {
+                            int result = 0;
+                            for ( int i = _allSceneLayers.Count - 1; i > -1; i-- )
+                            {
+                                if ( _allSceneLayers[ i ].gameObject.activeSelf )
+                                {
+                                    result = i;
+                                    break;
+                                }
+                            }
+                            RemoveLayer( result );
+                            LayerList.RemoveAt( result );
+                        }
                     }
                 }
                 using ( new BackgroundColorScope( Color.red ) )
@@ -367,7 +388,7 @@ public class MapEditor : EditorWindow
         }
     }
 
-    private void DuplicateLayer( int topShowLayerIndex , int toLayerIndex )
+    private void DuplicateLayer( int topShowLayerIndex, int toLayerIndex )
     {
         var list = _currentLevelCoreIndex[ topShowLayerIndex ];
         for ( int i = 0; i < list.Count; i++ )
@@ -378,7 +399,7 @@ public class MapEditor : EditorWindow
 
     private void EditorUpdateLabel()
     {
-        
+
     }
 
     private void WipeData()
@@ -405,7 +426,7 @@ public class MapEditor : EditorWindow
         _currentLevelCoreIndex.Clear();
         GC.Collect();
     }
-    
+
     #region 逻辑输出
 
 
@@ -423,7 +444,7 @@ public class MapEditor : EditorWindow
         //}
         var filepath = AssetPathManager.Instance.GetStreamAssetDataPath( string.Format( "level_{0}.dat", CurrentLevelID ) );
 
-        FileInfo fileInfo = new FileInfo(filepath);
+        FileInfo fileInfo = new FileInfo( filepath );
         LevelData leveldata = new LevelData();
         leveldata.LevelID = int.Parse( CurrentLevelID );
         leveldata.LayerNum = LayerList.Count;
@@ -535,7 +556,7 @@ public class MapEditor : EditorWindow
         FullStarTime = levelData.FullStarTime;
         GridOffset = new Vector2( ( float )levelData.GridOffsetX, ( float )levelData.GridOffsetY );
 
-        _col = (ColNum - 1) / 2;
+        _col = ( ColNum - 1 ) / 2;
         _row = ( RowNum - 1 ) / 2;
         _scene.transform.position = GridOffset;
 
@@ -545,7 +566,7 @@ public class MapEditor : EditorWindow
             LayerList.Add( true );
             //CurrentUsedCardNum += list[ i ].LayerIndexList.Count;
             CreateLayer( list[ i ].LayerID );
-            
+
             for ( int q = 0; q < list[ i ].LayerIndexList.Count; q++ )
                 RealAddCard( list[ i ].LayerID, list[ i ].LayerIndexList[ q ] );
         }
@@ -608,20 +629,22 @@ public class MapEditor : EditorWindow
         //点位数据
         DelteMapGrid( layerIndex );
 
-        //汇总数据
-        if ( _currentLevelCoreIndex.ContainsKey( layerIndex ) )
-        {
-            var currentLayer = _currentLevelCoreIndex[ layerIndex ];
-            for ( int i = 0; i < currentLayer.Count; i++ )
-            {
-                var row = Mathf.FloorToInt( ( float )currentLayer[i] / ColNum );
-                var col = currentLayer[ i ] % ColNum;
-                //RealRemoveCard( layerIndex, currentLayer[ i ], row, col );
-            }
+        ////汇总数据
+        //if ( _currentLevelCoreIndex.ContainsKey( layerIndex ) )
+        //{
+        //    var currentLayer = _currentLevelCoreIndex[ layerIndex ];
+        //    for ( int i = 0; i < currentLayer.Count; i++ )
+        //    {
+        //        var row = Mathf.FloorToInt( ( float )currentLayer[ i ] / ColNum );
+        //        var col = currentLayer[ i ] % ColNum;
+        //        //RealRemoveCard( layerIndex, currentLayer[ i ], row, col );
+        //    }
 
-            _currentLevelCoreIndex[ layerIndex ].Clear();
-            _currentLevelCoreIndex.Remove( layerIndex );
-        }
+        //    _currentLevelCoreIndex[ layerIndex ].Clear();
+        //    _currentLevelCoreIndex.Remove( layerIndex );
+        //}
+
+        _currentLevelCoreIndex = _templenewCurrentLevelCoreIndex;
     }
 
     /// <summary>
@@ -648,12 +671,31 @@ public class MapEditor : EditorWindow
             }
         }
     }
+
+    private Dictionary<int, List<int>> _templenewCurrentLevelCoreIndex;
     private void DelteMapGrid( int layer )
     {
-        if ( _allIndexLayers.ContainsKey( layer ) )
+        //if ( _allIndexLayers.ContainsKey( layer ) )
+        //{
+        //    _allIndexLayers.Remove( layer );
+        //}
+        Dictionary<int, Dictionary<int, int>> newResult = new Dictionary<int, Dictionary<int, int>>();
+        _templenewCurrentLevelCoreIndex = new Dictionary<int, List<int>>();
+        foreach ( var item in _allIndexLayers )
         {
-            _allIndexLayers.Remove( layer );
+            if ( item.Key < layer )
+            {
+                newResult.Add( item.Key, _allIndexLayers[ layer ] );
+                _templenewCurrentLevelCoreIndex.Add( item.Key, _currentLevelCoreIndex[ item.Key ] );
+            }
+            else if ( item.Key > layer )
+            {
+                newResult.Add( item.Key - 1, _allIndexLayers[ layer ] );
+                _templenewCurrentLevelCoreIndex.Add( item.Key - 1, _currentLevelCoreIndex[ layer ] );
+            }
         }
+        _allIndexLayers = newResult;
+
     }
     private void AddOccupyIndex( int index, int layerIndex )
     {
