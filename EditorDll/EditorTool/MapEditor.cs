@@ -109,23 +109,31 @@ public class MapEditor : EditorWindow
         //        break;
         //    }
         //}
-
-        if ( _allIndexLayers[ layer ][ index ] < 1 )
+        try
         {
-            for ( int i = 0; i < targetIndexs.Length; i++ )
+            if ( _allIndexLayers[ layer ][ index ] < 1 )
             {
-                AddOccupyIndex( targetIndexs[ i ], layer );
+                for ( int i = 0; i < targetIndexs.Length; i++ )
+                {
+                    AddOccupyIndex( targetIndexs[ i ], layer );
 
-                if ( i == targetIndexs.Length - 1 )
-                    _allTransformLayers[ layer ][ targetIndexs[ i ] ].GetComponent<SpriteRenderer>().color = Color.red;
-                else
-                    _allTransformLayers[ layer ][ targetIndexs[ i ] ].GetComponent<SpriteRenderer>().color = Color.yellow;
+                    if ( i == targetIndexs.Length - 1 )
+                        _allTransformLayers[ layer ][ targetIndexs[ i ] ].GetComponent<SpriteRenderer>().color = Color.red;
+                    else
+                        _allTransformLayers[ layer ][ targetIndexs[ i ] ].GetComponent<SpriteRenderer>().color = Color.yellow;
+                }
+                _currentLevelCoreIndex[ layer ].Add( index );
+
+                CurrentUsedCardNum++;
+                EditorUpdateLabel();
             }
-            _currentLevelCoreIndex[ layer ].Add( index );
-
-            CurrentUsedCardNum++;
-            EditorUpdateLabel();
         }
+        catch ( Exception )
+        {
+
+            throw;
+        }
+
     }
 
 
@@ -244,7 +252,7 @@ public class MapEditor : EditorWindow
                     }
 
                     SaveFile();
-                    EditorUtility.DisplayDialog( "提醒", string.Format( "关卡 {0} 配置已保存", CurrentLevelID ), "确定" );
+                    //EditorUtility.DisplayDialog( "提醒", string.Format( "关卡 {0} 配置已保存", CurrentLevelID ), "确定" );
                 }
             }
 
@@ -262,11 +270,41 @@ public class MapEditor : EditorWindow
                 }
             }
 
-            using ( new BackgroundColorScope( Color.green ) )
+            using ( new BackgroundColorScope( Color.red ) )
             {
                 if ( GUILayout.Button( "清除关卡" ) )
                 {
                     WipeData();
+                }
+            }
+
+            using ( new BackgroundColorScope( Color.green ) )
+            {
+                if ( GUILayout.Button( "下一关" ) )
+                {
+                    CurrentLevelID = ( int.Parse( CurrentLevelID ) + 1 ).ToString();
+                    if ( int.Parse( CurrentLevelID ) < 1 )
+                    {
+                        EditorUtility.DisplayDialog( "提醒", string.Format( "关卡ID需要>0。目前是：{0}", CurrentLevelID ), "确定" );
+                        return;
+                    }
+
+                    LoadFile();
+                }
+            }
+
+            using ( new BackgroundColorScope( Color.green ) )
+            {
+                if ( GUILayout.Button( "上一关" ) )
+                {
+                    CurrentLevelID = ( int.Parse( CurrentLevelID ) - 1 ).ToString();
+                    if ( int.Parse( CurrentLevelID ) < 1 )
+                    {
+                        EditorUtility.DisplayDialog( "提醒", string.Format( "关卡ID需要>0。目前是：{0}", CurrentLevelID ), "确定" );
+                        return;
+                    }
+
+                    LoadFile();
                 }
             }
 
@@ -280,6 +318,7 @@ public class MapEditor : EditorWindow
             CanPairNum = EditorGUILayout.IntField( "参与可选位牌数", CanPairNum );
             FullStarTime = EditorGUILayout.IntField( "三星通关时间（秒）", FullStarTime );
             EditorGUILayout.LabelField( "当前关卡已指定牌数", CurrentUsedCardNum.ToString() );
+            EditorGUILayout.LabelField( "符合要求 : ", CurrentUsedCardNum % 3 == 0 ? "Yes" : string.Format( "No {0}/{1}", 3 - CurrentUsedCardNum % 3, -CurrentUsedCardNum % 3 ) );
 
             ColNum = 1 + 2 * _col;
             RowNum = 1 + 2 * _row;
@@ -329,7 +368,7 @@ public class MapEditor : EditorWindow
                     {
                         if ( LayerList.Count > 0 )
                         {
-                            int result = 0;
+                            int result = -1;
                             for ( int i = _allSceneLayers.Count - 1; i > -1; i-- )
                             {
                                 if ( _allSceneLayers[ i ].gameObject.activeSelf )
@@ -338,8 +377,11 @@ public class MapEditor : EditorWindow
                                     break;
                                 }
                             }
-                            RemoveLayer( result );
-                            LayerList.RemoveAt( result );
+                            if ( result > -1 )
+                            {
+                                RemoveLayer( result );
+                                LayerList.RemoveAt( result );
+                            }
                         }
                     }
                 }
@@ -374,6 +416,28 @@ public class MapEditor : EditorWindow
                     if ( newChecked != LayerList[ i ] ) ShowLayer( i, newChecked );
                     LayerList[ i ] = newChecked;
                 }
+            }
+        }
+
+        using ( new EditorGUILayout.HorizontalScope() )
+        {
+            if ( GUILayout.Button( "上" ) )
+            {
+                MoveLayerUp();
+            }
+            if ( GUILayout.Button( "下" ) )
+            {
+                MoveLayerDown();
+            }
+
+            if ( GUILayout.Button( "左" ) )
+            {
+                MoveLayerLeft();
+            }
+
+            if ( GUILayout.Button( "右" ) )
+            {
+                MoveLayerRight();
             }
         }
 
@@ -442,7 +506,7 @@ public class MapEditor : EditorWindow
         //    EditorUtility.DisplayDialog( "提醒", string.Format( "已超过麻将数上限：140，当前使用 {0}", CurrentUsedCardNum ), "确定" );
         //    return;
         //}
-        var filepath = AssetPathManager.Instance.GetStreamAssetDataPath( string.Format( "level_{0}.dat", CurrentLevelID ) );
+        var filepath = AssetPathManager.Instance.GetStreamAssetDataPath( string.Format( "level_{0}.dat", CurrentLevelID ), false );
 
         FileInfo fileInfo = new FileInfo( filepath );
         LevelData leveldata = new LevelData();
@@ -490,7 +554,7 @@ public class MapEditor : EditorWindow
 
     private static void UpdateAllLevels( string levelID )
     {
-        string filepath = AssetPathManager.Instance.GetStreamAssetDataPath( "levels.dat" );
+        string filepath = AssetPathManager.Instance.GetStreamAssetDataPath( "levels.dat", false );
         FileInfo fileInfo = new FileInfo( filepath );
 
         StreamWriter sw;
@@ -533,7 +597,7 @@ public class MapEditor : EditorWindow
     /// </summary>
     private void LoadFile()
     {
-        var filepath = AssetPathManager.Instance.GetStreamAssetDataPath( string.Format( "level_{0}.dat", CurrentLevelID ) );
+        var filepath = AssetPathManager.Instance.GetStreamAssetDataPath( string.Format( "level_{0}.dat", CurrentLevelID ), false );
         FileInfo fileInfo = new FileInfo( filepath );
         if ( !File.Exists( filepath ) )
         {
@@ -613,6 +677,223 @@ public class MapEditor : EditorWindow
         }
     }
 
+
+    /// <summary>
+    /// 上移一个该层点位
+    /// </summary>
+    private void MoveLayerUp()
+    {
+        if ( LayerList.Count > 0 )
+        {
+            int result = -1;
+            for ( int i = _allSceneLayers.Count - 1; i > -1; i-- )
+            {
+                if ( _allSceneLayers[ i ].gameObject.activeSelf )
+                {
+                    result = i;
+                    break;
+                }
+            }
+            if ( result > -1 )
+            {
+                var targetLayer = _allTransformLayers[ result ];
+                List<int> newIndexCore = new List<int>();
+                Dictionary<int, int> newResultIndex = new Dictionary<int, int>();
+
+                foreach ( var item in targetLayer )
+                {
+                    item.Value.GetComponent<SpriteRenderer>().color = Color.white;
+                }
+
+                for ( int i = 0; i < _currentLevelCoreIndex[ result ].Count; i++ )
+                {
+                    if ( Mathf.FloorToInt( _currentLevelCoreIndex[ result ][ i ] / ( float )ColNum ) > 1 )
+                    {
+                        newIndexCore.Add( _currentLevelCoreIndex[ result ][ i ] - ColNum );
+                    }
+                }
+
+                //清空原层占点数据
+                _currentLevelCoreIndex[ result ].Clear();
+
+                foreach ( var item in _allIndexLayers[ result ] )
+                {
+                    newResultIndex.Add( item.Key, 0 );
+                }
+                _allIndexLayers[ result ] = newResultIndex;
+
+                foreach ( var item in newIndexCore )
+                {
+                    RealAddCard( result, item );
+                }
+            }
+        }
+
+
+    }
+
+    /// <summary>
+    /// 下移一个该层点位
+    /// </summary>
+    private void MoveLayerDown()
+    {
+        if ( LayerList.Count > 0 )
+        {
+            int result = -1;
+            for ( int i = _allSceneLayers.Count - 1; i > -1; i-- )
+            {
+                if ( _allSceneLayers[ i ].gameObject.activeSelf )
+                {
+                    result = i;
+                    break;
+                }
+            }
+            if ( result > -1 )
+            {
+                var targetLayer = _allTransformLayers[ result ];
+                List<int> newIndexCore = new List<int>();
+                Dictionary<int, int> newResultIndex = new Dictionary<int, int>();
+
+                foreach ( var item in targetLayer )
+                {
+                    item.Value.GetComponent<SpriteRenderer>().color = Color.white;
+                }
+
+                for ( int i = 0; i < _currentLevelCoreIndex[ result ].Count; i++ )
+                {
+                    if ( Mathf.FloorToInt( _currentLevelCoreIndex[ result ][ i ] / ( float )ColNum ) < RowNum - 2 )
+                    {
+                        newIndexCore.Add( _currentLevelCoreIndex[ result ][ i ] + ColNum );
+                    }
+                }
+
+                //清空原层占点数据
+                _currentLevelCoreIndex[ result ].Clear();
+
+                foreach ( var item in _allIndexLayers[ result ] )
+                {
+                    newResultIndex.Add( item.Key, 0 );
+                }
+                _allIndexLayers[ result ] = newResultIndex;
+
+                foreach ( var item in newIndexCore )
+                {
+                    RealAddCard( result, item );
+                }
+            }
+        }
+
+
+    }
+
+    /// <summary>
+    /// 左移一个该层点位
+    /// </summary>
+    private void MoveLayerLeft()
+    {
+        if ( LayerList.Count > 0 )
+        {
+            int result = -1;
+            for ( int i = _allSceneLayers.Count - 1; i > -1; i-- )
+            {
+                if ( _allSceneLayers[ i ].gameObject.activeSelf )
+                {
+                    result = i;
+                    break;
+                }
+            }
+            if ( result > -1 )
+            {
+                var targetLayer = _allTransformLayers[ result ];
+                List<int> newIndexCore = new List<int>();
+                Dictionary<int, int> newResultIndex = new Dictionary<int, int>();
+
+                foreach ( var item in targetLayer )
+                {
+                    item.Value.GetComponent<SpriteRenderer>().color = Color.white;
+                }
+
+                for ( int i = 0; i < _currentLevelCoreIndex[ result ].Count; i++ )
+                {
+                    if ( _currentLevelCoreIndex[ result ][ i ] % ColNum > 1 )
+                    {
+                        newIndexCore.Add( _currentLevelCoreIndex[ result ][ i ] - 1 );
+                    }
+                }
+
+                //清空原层占点数据
+                _currentLevelCoreIndex[ result ].Clear();
+
+                foreach ( var item in _allIndexLayers[ result ] )
+                {
+                    newResultIndex.Add( item.Key, 0 );
+                }
+                _allIndexLayers[ result ] = newResultIndex;
+
+                foreach ( var item in newIndexCore )
+                {
+                    RealAddCard( result, item );
+                }
+            }
+        }
+
+
+    }
+
+    /// <summary>
+    /// 右移一个该层点位
+    /// </summary>
+    private void MoveLayerRight()
+    {
+        if ( LayerList.Count > 0 )
+        {
+            int result = -1;
+            for ( int i = _allSceneLayers.Count - 1; i > -1; i-- )
+            {
+                if ( _allSceneLayers[ i ].gameObject.activeSelf )
+                {
+                    result = i;
+                    break;
+                }
+            }
+            if ( result > -1 )
+            {
+                var targetLayer = _allTransformLayers[ result ];
+                List<int> newIndexCore = new List<int>();
+                Dictionary<int, int> newResultIndex = new Dictionary<int, int>();
+
+                foreach ( var item in targetLayer )
+                {
+                    item.Value.GetComponent<SpriteRenderer>().color = Color.white;
+                }
+
+                for ( int i = 0; i < _currentLevelCoreIndex[ result ].Count; i++ )
+                {
+                    if ( _currentLevelCoreIndex[ result ][ i ] % ColNum < ColNum - 2 )
+                    {
+                        newIndexCore.Add( _currentLevelCoreIndex[ result ][ i ] + 1 );
+                    }
+                }
+
+                //清空原层占点数据
+                _currentLevelCoreIndex[ result ].Clear();
+
+                foreach ( var item in _allIndexLayers[ result ] )
+                {
+                    newResultIndex.Add( item.Key, 0 );
+                }
+                _allIndexLayers[ result ] = newResultIndex;
+
+                foreach ( var item in newIndexCore )
+                {
+                    RealAddCard( result, item );
+                }
+            }
+        }
+
+
+    }
+
     /// <summary>
     /// 删除指定层
     /// </summary>
@@ -685,13 +966,13 @@ public class MapEditor : EditorWindow
         {
             if ( item.Key < layer )
             {
-                newResult.Add( item.Key, _allIndexLayers[ layer ] );
+                newResult.Add( item.Key, _allIndexLayers[ item.Key ] );
                 _templenewCurrentLevelCoreIndex.Add( item.Key, _currentLevelCoreIndex[ item.Key ] );
             }
             else if ( item.Key > layer )
             {
-                newResult.Add( item.Key - 1, _allIndexLayers[ layer ] );
-                _templenewCurrentLevelCoreIndex.Add( item.Key - 1, _currentLevelCoreIndex[ layer ] );
+                newResult.Add( item.Key - 1, _allIndexLayers[ item.Key ] );
+                _templenewCurrentLevelCoreIndex.Add( item.Key - 1, _currentLevelCoreIndex[ item.Key ] );
             }
         }
         _allIndexLayers = newResult;
